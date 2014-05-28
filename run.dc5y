@@ -2,7 +2,7 @@
 #
 # VERSION               0.0.1
 
-FROM      ubuntu:precise
+FROM      ubuntu
 MAINTAINER Laurent Doguin <ldoguin@nuxeo.com>
 
 # Set locale
@@ -11,18 +11,22 @@ ENV LC_ALL en_US.UTF-8
 
 # Install dependencies
 ENV DEBIAN_FRONTEND noninteractive
-RUN apt-get install -y python-software-properties wget sudo net-tools
-
 
 RUN echo "deb http://archive.ubuntu.com/ubuntu precise main universe" > /etc/apt/sources.list
-
+RUN apt-get update
+RUN apt-get upgrade -y
+RUN apt-get install -y python-software-properties wget sudo net-tools
 # Add Nuxeo Repository
 RUN apt-add-repository "deb http://apt.nuxeo.org/ precise fasttracks"
 RUN wget -q -O - http://apt.nuxeo.org/nuxeo.key | apt-key add -
 
+
+
+
 # Upgrade Ubuntu
 RUN apt-get update
 RUN apt-get upgrade -y
+
 
 
 # Small trick to Install fuse(libreoffice dependency) because of container permission issue. 
@@ -31,14 +35,11 @@ RUN rm -rf /var/lib/dpkg/info/fuse.postinst
 RUN apt-get -y install fuse
 
 # Install Nuxeo Dependencies
-RUN sudo apt-get install -y acpid openjdk-7-jdk libreoffice imagemagick poppler-utils ffmpeg ffmpeg2theora ufraw libwpd-tools perl locales pwgen dialog supervisor unzip vim
-
-RUN mkdir -p /var/log/supervisor
+RUN sudo apt-get install -y acpid openjdk-7-jdk libreoffice imagemagick poppler-utils ffmpeg ffmpeg2theora ufraw libwpd-tools perl locales pwgen dialog unzip
 
 # create Nuxeo user
 RUN useradd -m -d /home/nuxeo -p nuxeo nuxeo && adduser nuxeo sudo && chsh -s /bin/bash nuxeo
 ENV NUXEO_USER nuxeo
-ADD dockerResources/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Download latest LTS nuxeo version
 RUN wget http://community.nuxeo.com/static/releases/nuxeo-5.8/nuxeo-cap-5.8-tomcat.zip && mv nuxeo-cap-5.8-tomcat.zip nuxeo-distribution.zip
@@ -46,27 +47,8 @@ RUN wget http://community.nuxeo.com/static/releases/nuxeo-5.8/nuxeo-cap-5.8-tomc
 ENV NUXEOCTL /var/lib/nuxeo/server/bin/nuxeoctl
 ENV NUXEO_CONF /etc/nuxeo/nuxeo.conf
 
-# Add postgresql Repository
-RUN apt-add-repository "deb http://apt.postgresql.org/pub/repos/apt/ precise-pgdg main"
-RUN wget -q -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
-RUN apt-get update
-
-# Install apache and ssh server 
-RUN sudo apt-get install -y openssh-server apache2 postgresql-9.3
-RUN mkdir -p /var/run/sshd
-
-ADD dockerResources/supervisor_nuxeo.conf /etc/supervisor/conf.d/supervisor_nuxeo.conf
-ADD dockerResources/nuxeo.apache2 /etc/apache2/sites-available/nuxeo
 ADD dockerResources/postinst.sh /root/postinst.sh
-ADD dockerResources/firstboot.sh /root/firstboot.sh
-ADD dockerResources/entrypoint.sh /entrypoint.sh
-ADD dockerResources/pgListener.py pgListener.py
-
 RUN /root/postinst.sh
 
-EXPOSE 22 80
-ENTRYPOINT ["/entrypoint.sh"]
-CMD ["/usr/bin/supervisord"]
-
-
-
+EXPOSE 8080
+CMD ["su","-m","nuxeo","-c","/var/lib/nuxeo/server/bin/nuxeoctl console"]
