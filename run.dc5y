@@ -2,8 +2,9 @@
 #
 # VERSION               0.0.1
 
-FROM      ubuntu
+FROM      ubuntu:quantal
 MAINTAINER Laurent Doguin <ldoguin@nuxeo.com>
+
 
 # Set locale
 RUN locale-gen --no-purge en_US.UTF-8
@@ -12,30 +13,20 @@ ENV LC_ALL en_US.UTF-8
 # Install dependencies
 ENV DEBIAN_FRONTEND noninteractive
 
-RUN echo "deb http://archive.ubuntu.com/ubuntu precise main universe" > /etc/apt/sources.list
+RUN echo "deb http://archive.ubuntu.com/ubuntu quantal main universe" > /etc/apt/sources.list
 RUN apt-get update
 RUN apt-get upgrade -y
-RUN apt-get install -y python-software-properties wget sudo net-tools
+RUN apt-get install -y  wget sudo net-tools
+
 # Add Nuxeo Repository
-RUN apt-add-repository "deb http://apt.nuxeo.org/ precise fasttracks"
+RUN echo "deb http://apt.nuxeo.org/ quantal fasttracks" > /etc/apt/sources.list.d/nuxeo
 RUN wget -q -O - http://apt.nuxeo.org/nuxeo.key | apt-key add -
 
-
-
-
-# Upgrade Ubuntu
 RUN apt-get update
 RUN apt-get upgrade -y
 
-
-
-# Small trick to Install fuse(libreoffice dependency) because of container permission issue. 
-RUN apt-get -y install fuse || true 
-RUN rm -rf /var/lib/dpkg/info/fuse.postinst
-RUN apt-get -y install fuse
-
 # Install Nuxeo Dependencies
-RUN sudo apt-get install -y acpid openjdk-7-jdk libreoffice imagemagick poppler-utils ffmpeg ffmpeg2theora ufraw libwpd-tools perl locales pwgen dialog unzip
+RUN sudo apt-get install -y fuse acpid openjdk-7-jdk libreoffice imagemagick poppler-utils ffmpeg ffmpeg2theora ufraw libwpd-tools perl locales pwgen dialog unzip
 
 # create Nuxeo user
 RUN useradd -m -d /home/nuxeo -p nuxeo nuxeo && adduser nuxeo sudo && chsh -s /bin/bash nuxeo
