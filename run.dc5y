@@ -41,9 +41,8 @@ RUN wget http://community.nuxeo.com/static/releases/nuxeo-5.8/nuxeo-cap-5.8-tomc
 
 ENV NUXEOCTL /var/lib/nuxeo/server/bin/nuxeoctl
 ENV NUXEO_CONF /etc/nuxeo/nuxeo.conf
-
-ADD dockerResources/postinst.sh /root/postinst.sh
-RUN /root/postinst.sh
+ADD $app$/dockerResources/postinst.sh /root/postinst.sh
+RUN chmod +x /root/postinst.sh && /root/postinst.sh
 
 EXPOSE 8080
 CMD ["su","-m","nuxeo","-c","/var/lib/nuxeo/server/bin/nuxeoctl console"]
